@@ -1,12 +1,18 @@
 ﻿using System;
+using System.Threading.Tasks;
+using SixLabors.ImageSharp;
 
 namespace Scratch
 {
     class Program
     {
-        static void Main(string[] args)
+        
+        static async Task Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            using (var img = await SixLabors.Svg.SvgImage.LoadFromFileAsync<SixLabors.ImageSharp.PixelFormats.Rgba32>("source.svg"))
+            {
+                img.Save("source.png");
+            }
         }
     }
 }

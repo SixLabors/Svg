@@ -5,34 +5,40 @@ using System.Threading.Tasks;
 using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Css;
-using AngleSharp.Dom.Svg;
-using AngleSharp.Network;
 using SixLabors.Svg.Dom;
+using AngleSharp.Io;
+using AngleSharp.Svg.Dom;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using Configuration = AngleSharp.Configuration;
 
 namespace SixLabors.Svg
 {
-    public partial class SvgImage
+    public static class SvgImage
     {
-
-        public static Task<SvgImage> LoadFromFileAsync(string path)
+        public static Task<Image<TPixel>> LoadFromFileAsync<TPixel>(string path)
+            where TPixel : struct, IPixel<TPixel>
         {
             var content = File.ReadAllText(path);
-            return LoadFromAsync(content, false);
+            return LoadFromAsync<TPixel>(content, false);
         }
 
-        public static Task<SvgImage> LoadFromStringAsync(string content)
+        public static Task<Image<TPixel>> LoadFromStringAsync<TPixel>(string content)
+            where TPixel : struct, IPixel<TPixel>
         {
-            return LoadFromAsync(content, false);
+            return LoadFromAsync<TPixel>(content, false);
         }
 
-        public static Task<SvgImage> LoadFromUrlAsync(string url)
+        public static Task<Image<TPixel>> LoadFromUrlAsync<TPixel>(Uri url)
+            where TPixel : struct, IPixel<TPixel>
         {
-            return LoadFromAsync(url, true);
+            return LoadFromAsync<TPixel>(url.ToString(), true);
         }
 
-        public static async Task<SvgImage> LoadFromAsync(string content, bool isUrl)
+        public static async Task<Image<TPixel>> LoadFromAsync<TPixel>(string content, bool isUrl)
+            where TPixel : struct, IPixel<TPixel>
         {
-            var config = Configuration.Default.WithDefaultLoader().WithCss();
+            var config = Configuration.Default.WithDefaultLoader();
             var context = BrowsingContext.New(config);
 
             IDocument doc;
@@ -50,16 +56,19 @@ namespace SixLabors.Svg
                 });
             }
 
-            var svgElement = doc as AngleSharp.Dom.Svg.ISvgDocument;
+            var svgElement = doc as ISvgDocument;
 
             if (svgElement == null)
             {
                 throw new Exception("Failed to load document");
             }
 
-            var dom = await SvgElement.LoadElementAsync(svgElement.DocumentElement as ISvgElement);
+            var dom = await SvgDocument.LoadAsync(svgElement.DocumentElement as ISvgElement);
 
-            return new SvgImage(dom as SvgLayer);
+            return dom.Generate<TPixel>(new RenderOptions
+            {
+                Dpi = 96
+            });
         }
     }
 }

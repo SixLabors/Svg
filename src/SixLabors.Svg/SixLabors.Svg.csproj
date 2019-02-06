@@ -5,8 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AngleSharp" Version="0.9.9" />
-    <PackageReference Include="ImageSharp.Drawing" Version="1.0.0-alpha5-00040" />
+    <PackageReference Include="AngleSharp" Version="0.10.1" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-dev002362" />
   </ItemGroup>
 
 </Project>
