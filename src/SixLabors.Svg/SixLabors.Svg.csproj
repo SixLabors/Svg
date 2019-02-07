@@ -1,12 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard1.3</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>7.2</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="AngleSharp" Version="0.10.1" />
+    <PackageReference Include="AngleSharp.Css" Version="0.10.0" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-dev002362" />
+    <PackageReference Include="SixLabors.Shapes" Version="1.0.0-dev000112" />
   </ItemGroup>
 
 </Project>

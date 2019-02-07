@@ -21,6 +21,11 @@ namespace SixLabors.Svg.Dom
                 case "circle":
                 case "ellipse":
                     return await SvgEllipse.LoadAsync(element);
+                case "line":
+                case "polyline":
+                case "polygon":
+                case "path":
+                    return await SvgPath.LoadAsync(element);
                 default:
                     return null;
             }

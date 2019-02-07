@@ -30,10 +30,10 @@ namespace SixLabors.Svg.Dom
         {
             var document = new SvgDocument()
             {
-                X = SvgUnitValue.Parse(element.Attributes["x"]?.Value),
-                Y = SvgUnitValue.Parse(element.Attributes["y"]?.Value),
-                Width = SvgUnitValue.Parse(element.Attributes["width"]?.Value),
-                Height = SvgUnitValue.Parse(element.Attributes["height"]?.Value),
+                X = element.GetUnitValue("x", "0"),
+                Y = element.GetUnitValue("y", "0"),
+                Width = element.GetUnitValue("width"),
+                Height = element.GetUnitValue("height")
             };
 
             var children = element.Children.OfType<ISvgElement>();

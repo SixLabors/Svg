@@ -3,11 +3,10 @@ using System.Threading.Tasks;
 using AngleSharp.Svg.Dom;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
-using SixLabors.Shapes;
 
 namespace SixLabors.Svg.Dom
 {
-    internal sealed class SvgEllipse : SvgElement
+    internal sealed class SvgEllipse : SvgElement, ISvgShape
     {
 
         public SvgUnitValue X { get; private set; }
@@ -17,25 +16,30 @@ namespace SixLabors.Svg.Dom
         public SvgPaint Fill { get; private set; }
         public SvgPaint Stroke { get; private set; }
         public SvgUnitValue StrokeWidth { get; private set; }
+        public SvgLineCap StrokeLineCap { get; private set; }
+        public SvgLineJoin StrokeLineJoin { get; private set; }
 
         public static Task<SvgElement> LoadAsync(ISvgElement element)
         {
             var ellipse = new SvgEllipse()
             {
-                Fill = SvgPaint.Parse(element.Attributes["fill"]?.Value ?? "Black", element.Attributes["fill-opacity"]?.Value ?? "1"),
-                Stroke = SvgPaint.Parse(element.Attributes["stroke"]?.Value ?? "None", element.Attributes["stroke-opacity"]?.Value ?? "1"),
-                StrokeWidth = SvgUnitValue.Parse(element.Attributes["stroke-width"]?.Value ?? "1"),
-                X = SvgUnitValue.Parse(element.Attributes["cx"]?.Value),
-                Y = SvgUnitValue.Parse(element.Attributes["cy"]?.Value)
+                Fill = element.GetPaint("fill", "Black", "1"),
+                Stroke = element.GetPaint("stroke", "None", "1"),
+                StrokeWidth = element.GetUnitValue("stroke-width", "1"),
+                StrokeLineCap = element.GetLineCap("stroke-linecap", "butt"),
+                StrokeLineJoin = element.GetLineJoin("stroke-linejoin", "miter"),
+                X = element.GetUnitValue("cx"),
+                Y = element.GetUnitValue("cy"),
             };
+
             if (element.TagName == "circle")
             {
-                ellipse.RadiusY = ellipse.RadiusX = SvgUnitValue.Parse(element.Attributes["r"]?.Value ?? "0");
+                ellipse.RadiusY = ellipse.RadiusX = element.GetUnitValue("r", "0");
             }
             else
             {
-                ellipse.RadiusY = SvgUnitValue.Parse(element.Attributes["ry"]?.Value ?? "0");
-                ellipse.RadiusX = SvgUnitValue.Parse(element.Attributes["rx"]?.Value ?? "0");
+                ellipse.RadiusX = element.GetUnitValue("rx", "0");
+                ellipse.RadiusY = element.GetUnitValue("ry", "0");
             }
 
             return Task.FromResult<SvgElement>(ellipse);
@@ -47,17 +51,19 @@ namespace SixLabors.Svg.Dom
 
             var fillBrush = Fill.AsBrush<TPixel>();
             var strokeBrush = Stroke.AsBrush<TPixel>();
-            var strokeWidth = this.StrokeWidth.AsPixelXAxis(image);
             image.Mutate(x =>
             {
                 if (fillBrush != null)
                 {
                     x = x.Fill(fillBrush, rect);
                 }
-                if (strokeBrush != null && strokeWidth > 0)
+                if (strokeBrush != null)
                 {
-                    var outline = Outliner.GenerateOutline(rect, strokeWidth);
-                    x = x.Fill(strokeBrush, outline);
+                    var outline = rect.GenerateStroke(image, this);
+                    if (outline != null)
+                    {
+                        x = x.Fill(strokeBrush, outline);
+                    }
                 }
             });
         }
