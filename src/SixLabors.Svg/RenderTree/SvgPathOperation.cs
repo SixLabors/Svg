@@ -166,7 +166,7 @@ namespace SixLabors.Svg.Dom
                     }
                     // we can skip 'whitespace'
                 }
-                if (char.IsDigit(str[position]) || str[position] == '-' || str[position] == '.')
+                if (char.IsDigit(str[position]) || (str[position] == '-' && floatStart == 0) || str[position] == '.')
                 {
                     if (floatStart == 0) { floatStart = position; }
                 }
