@@ -1,86 +1,60 @@
-﻿using AngleSharp.Svg.Dom;
-using SixLabors.ImageSharp;
+﻿using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.Shapes;
-using AngleSharp.Dom;
-using System.Linq;
-using SixLabors.ImageSharp.PixelFormats;
+using SVGSharpie;
+using System.Numerics;
 
 namespace SixLabors.Svg.Dom
 {
     internal static class Extensions
     {
-        public static IPath GenerateStroke<TPixel>(this IPath path, Image<TPixel> img, ISvgShape shape) where TPixel : struct, IPixel<TPixel>
+        public static Matrix3x2 AsMatrix3x2(this SvgMatrix matrix)
         {
-            var strokeWidth = shape.StrokeWidth.AsPixelXAxis(img);
-            if (strokeWidth == 0)
+            return new Matrix3x2(matrix.A, matrix.B, matrix.C, matrix.D, matrix.E, matrix.F);
+        }
+
+        public static TPixel As<TPixel>(this SvgColor value, float opactiy) where TPixel : struct, IPixel<TPixel>
+        {
+            var colorRgb = new Rgba32(value.R, value.G, value.B, (byte)(opactiy * value.A));
+
+            var color = default(TPixel);
+            color.FromRgba32(colorRgb);
+
+            return color;
+        }
+
+        public static JointStyle AsJointStyle(this StyleProperty<SvgStrokeLineJoin> join) => join.Value.AsJointStyle();
+
+        public static JointStyle AsJointStyle(this SvgStrokeLineJoin join)
+        {
+            switch (join)
             {
-                return null;
+                case SvgStrokeLineJoin.Miter:
+                    return JointStyle.Miter;
+                case SvgStrokeLineJoin.Round:
+                    return JointStyle.Round;
+                case SvgStrokeLineJoin.Bevel:
+                    return JointStyle.Square;
+                case SvgStrokeLineJoin.Inherit:
+                default:
+                    return JointStyle.Miter;
             }
-
-            return Outliner.GenerateOutline(path, strokeWidth, shape.StrokeLineJoin.Style, shape.StrokeLineCap.Style);
         }
+        public static EndCapStyle AsEndCapStyle(this StyleProperty<SvgStrokeLineCap> join) => join.Value.AsEndCapStyle();
 
-        public static string GetAttributeValueSelfOrGroup(this ISvgElement element, string attribute)
+        public static EndCapStyle AsEndCapStyle(this SvgStrokeLineCap join)
         {
-            var val = element.Attributes[attribute]?.Value;
-
-            if (val == null)
+            switch (join)
             {
-                val = element.Ancestors<ISvgElement>().Where(x => x.TagName == "g").FirstOrDefault()?.GetAttributeValueSelfOrGroup(attribute);
+                case SvgStrokeLineCap.Butt:
+                    return EndCapStyle.Butt;
+                case SvgStrokeLineCap.Round:
+                    return EndCapStyle.Round;
+                case SvgStrokeLineCap.Square:
+                    return EndCapStyle.Square;
+                case SvgStrokeLineCap.Inherit:
+                default:
+                    return EndCapStyle.Butt;
             }
-
-            return val;
         }
-
-        public static SvgPaint GetPaint(this ISvgElement element, string attribute, string defaultPaintValue, string defaultOpacityValue)
-        {
-            var paint = element.GetAttributeValueSelfOrGroup(attribute) ?? defaultPaintValue;
-            var opacity = element.GetAttributeValueSelfOrGroup(attribute + "-opacity") ?? defaultOpacityValue;
-
-            return SvgPaint.Parse(paint, opacity);
-        }
-
-        public static SvgUnitValue GetUnitValue(this ISvgElement element, string attribute, string defaultValue = null)
-        {
-            var val = element.TryGetUnitValue(attribute, defaultValue);
-
-            return val ?? SvgUnitValue.Unset;
-        }
-        public static SvgUnitValue? TryGetUnitValue(this ISvgElement element, string attribute, string defaultValue = null)
-        {
-            var val = element.GetAttributeValueSelfOrGroup(attribute) ?? defaultValue;
-
-            return SvgUnitValue.Parse(val);
-        }
-
-        public static SvgLineCap GetLineCap(this ISvgElement element, string attribute, string defaultValue = null)
-        {
-            var val = element.TryGetLineCap(attribute, defaultValue);
-
-            return val ?? SvgLineCap.Unset;
-        }
-
-        public static SvgLineCap? TryGetLineCap(this ISvgElement element, string attribute, string defaultValue = null)
-        {
-            var val = element.GetAttributeValueSelfOrGroup(attribute) ?? defaultValue;
-
-            return SvgLineCap.Parse(val);
-        }
-
-
-        public static SvgLineJoin GetLineJoin(this ISvgElement element, string attribute, string defaultValue = null)
-        {
-            var val = element.TryGetLineJoin(attribute, defaultValue);
-
-            return val ?? SvgLineJoin.Unset;
-        }
-
-        public static SvgLineJoin? TryGetLineJoin(this ISvgElement element, string attribute, string defaultValue = null)
-        {
-            var val = element.GetAttributeValueSelfOrGroup(attribute) ?? defaultValue;
-
-            return SvgLineJoin.Parse(val);
-        }
-
     }
 }

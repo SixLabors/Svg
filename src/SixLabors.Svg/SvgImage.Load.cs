@@ -2,73 +2,48 @@
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using AngleSharp;
-using AngleSharp.Dom;
-using AngleSharp.Css;
 using SixLabors.Svg.Dom;
-using AngleSharp.Io;
-using AngleSharp.Svg.Dom;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using Configuration = AngleSharp.Configuration;
+using SixLabors.ImageSharp.Processing;
 
-namespace SixLabors.Svg
+namespace SixLabors.ImageSharp.Formats.Svg
 {
-    public static class SvgImage
+    public static class SvgImageRenderer
     {
-        public static Task<Image<TPixel>> LoadFromFileAsync<TPixel>(string path)
+
+        public static Image<TPixel> LoadFromString<TPixel>(string content)
+            where TPixel : struct, IPixel<TPixel>
+            => LoadFromStringInner<TPixel>(content, null, null);
+
+        public static Image<TPixel> LoadFromString<TPixel>(string content, int width, int height)
+            where TPixel : struct, IPixel<TPixel>
+            => LoadFromStringInner<TPixel>(content, width, height);
+
+        private static Image<TPixel> LoadFromStringInner<TPixel>(string content, int? targetWidth, int? targetHeight)
             where TPixel : struct, IPixel<TPixel>
         {
-            var content = File.ReadAllText(path);
-            return LoadFromAsync<TPixel>(content, false);
-        }
+            var doc = SVGSharpie.SvgDocument.Parse(content);
 
-        public static Task<Image<TPixel>> LoadFromStringAsync<TPixel>(string content)
-            where TPixel : struct, IPixel<TPixel>
-        {
-            return LoadFromAsync<TPixel>(content, false);
-        }
+            float? width = targetWidth ?? doc.RootElement.Width ?? doc.RootElement.ViewWidth;
+            float? height = targetHeight ?? doc.RootElement.Height ?? doc.RootElement.ViewWidth;
 
-        public static Task<Image<TPixel>> LoadFromUrlAsync<TPixel>(Uri url)
-            where TPixel : struct, IPixel<TPixel>
-        {
-            return LoadFromAsync<TPixel>(url.ToString(), true);
-        }
-
-        public static async Task<Image<TPixel>> LoadFromAsync<TPixel>(string content, bool isUrl)
-            where TPixel : struct, IPixel<TPixel>
-        {
-            var config = Configuration.Default.WithDefaultLoader();
-            var context = BrowsingContext.New(config);
-
-            IDocument doc;
-            if (isUrl)
+            if (!width.HasValue || !height.HasValue)
             {
-                doc = await context.OpenAsync(content);
-            }
-            else
-            {
-                doc = await context.OpenAsync(res =>
-                {
-                    res.Content(content);
-
-                    res.Header(HeaderNames.ContentType, "image/svg+xml");
-                });
+                throw new Exception("Svg does not specify a size set one.");
             }
 
-            var svgElement = doc as ISvgDocument;
+            var image = new Image<TPixel>((int)Math.Ceiling(width.Value), (int)Math.Ceiling(height.Value));
 
-            if (svgElement == null)
+            image.Mutate(x =>
             {
-                throw new Exception("Failed to load document");
-            }
-
-            var dom = await SvgDocument.LoadAsync(svgElement.DocumentElement as ISvgElement);
-
-            return dom.Generate<TPixel>(new RenderOptions
-            {
-                Dpi = 96
+                var renderer = new SvgDocumentRenderer<TPixel>(image.Size(), x);
+                doc.RootElement.Accept(renderer);
             });
+
+
+
+            return image;
         }
     }
 }

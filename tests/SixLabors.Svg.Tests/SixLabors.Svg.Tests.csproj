@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\SixLabors.Svg\SixLabors.Svg.csproj" />
+    <ProjectReference Include="..\..\src\SixLabors.Svg\SixLabors.ImageSharp.Svg.csproj" />
   </ItemGroup>
 
   <ItemGroup>

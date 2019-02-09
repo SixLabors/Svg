@@ -6,10 +6,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AngleSharp" Version="0.10.1" />
-    <PackageReference Include="AngleSharp.Css" Version="0.10.0" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-dev002362" />
     <PackageReference Include="SixLabors.Shapes" Version="1.0.0-dev000112" />
+    <PackageReference Include="SixLabors.Shapes.Text" Version="1.0.0-dev000112" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\external\SVGSharpie\SVGSharpie.Svg\SVGSharpie.csproj" />
   </ItemGroup>
 
 </Project>

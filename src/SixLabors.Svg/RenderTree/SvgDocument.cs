@@ -1,64 +1,53 @@
 ﻿using System.Linq;
+using System.Numerics;
 using System.Threading.Tasks;
-using AngleSharp.Svg.Dom;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.Primitives;
+using SixLabors.Shapes;
+using SixLabors.Svg.Shapes;
+using SVGSharpie;
 
 namespace SixLabors.Svg.Dom
 {
-    internal sealed class SvgDocument
+    internal sealed partial class SvgDocumentRenderer<TPixel> : SvgElementWalker
+        where TPixel : struct, IPixel<TPixel>
     {
-        private readonly SvgLayer root;
+        private Matrix3x2 activeMatrix = Matrix3x2.Identity;
+        private readonly Vector2 size;
+        private readonly IImageProcessingContext<TPixel> image;
 
-        public SvgUnitValue X { get; private set; }
-        public SvgUnitValue Y { get; private set; }
-        public SvgUnitValue Width { get; private set; }
-        public SvgUnitValue Height { get; private set; }
-
-        public SvgDocument()
+        public SvgDocumentRenderer(SizeF size, IImageProcessingContext<TPixel> image)
         {
-            root = new SvgLayer();
+            this.size = size;
+            this.image = image;
         }
 
-        public void Add(SvgElement elm)
+        public override void VisitSvgElement(SvgSvgElement element)
         {
-            root.Add(elm);
-            elm.SetParent(root);
+            activeMatrix = element.CalculateViewboxFit(size.X, size.Y).AsMatrix3x2();
+
+            base.VisitSvgElement(element);
         }
 
-        public static async Task<SvgDocument> LoadAsync(ISvgElement element)
+        private Matrix3x2 CalulateUpdatedMatrix(SvgGraphicsElement elm)
         {
-            var document = new SvgDocument()
+            var matrix = activeMatrix;
+            foreach (var t in elm.Transform)
             {
-                X = element.GetUnitValue("x", "0"),
-                Y = element.GetUnitValue("y", "0"),
-                Width = element.GetUnitValue("width"),
-                Height = element.GetUnitValue("height")
-            };
-
-            var children = element.Children.OfType<ISvgElement>();
-            foreach (var c in children)
-            {
-                var elm = await SvgElement.LoadElementAsync(c);
-                if (elm != null)
-                {
-                    document.Add(elm);
-                }
+                matrix = matrix * t.Matrix.AsMatrix3x2();
             }
-
-            return document;
+            return matrix;
         }
 
-        internal Image<TPixel> Generate<TPixel>(RenderOptions options) where TPixel : struct, IPixel<TPixel>
+        public override void VisitGElement(SvgGElement element)
         {
-            // todo pass along the ImageSharp configuration
-            var img = new Image<TPixel>((int)this.Width.AsPixel(options.Dpi), (int)this.Height.AsPixel(options.Dpi));
+            var oldMatrix = activeMatrix;
+            activeMatrix = CalulateUpdatedMatrix(element);
+            base.VisitGElement(element);
 
-            this.root.RenderTo(img);
-
-            return img;
+            activeMatrix = oldMatrix;
         }
     }
-
-
 }

@@ -7,11 +7,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\SixLabors.Svg\SixLabors.Svg.csproj" />
+    <ProjectReference Include="..\src\SixLabors.Svg\SixLabors.ImageSharp.Svg.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <None Update="source.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="source.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="tiger.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="tiger.svg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
