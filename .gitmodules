@@ -1,0 +1,3 @@
+[submodule "external/SVGSharpie"]
+	path = external/SVGSharpie
+	url = https://github.com/equinox2k/SVGSharpie.git
