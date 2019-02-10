@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
@@ -25,24 +26,22 @@ namespace SixLabors.Svg.Dom
 
             var fonts = SystemFonts.Collection;
             FontFamily family = null;
-            if (element.PresentationStyleData.FontFamily.HasValue)
-            {
-                foreach (var f in element.PresentationStyleData.FontFamily.Value.Value)
-                {
-                    var fontName = f;
-                    if (fontName.Equals("sans-serif"))
-                    {
-                        fontName = DefaultSansSerifFont;
-                    }
-                    else if (fontName.Equals("serif"))
-                    {
-                        fontName = DefaultSerifFont;
-                    }
 
-                    if (fonts.TryFind(fontName, out family))
-                    {
-                        break;
-                    }
+            foreach (var f in element.Style.FontFamily.Value)
+            {
+                var fontName = f;
+                if (fontName.Equals("sans-serif"))
+                {
+                    fontName = DefaultSansSerifFont;
+                }
+                else if (fontName.Equals("serif"))
+                {
+                    fontName = DefaultSerifFont;
+                }
+
+                if (fonts.TryFind(fontName, out family))
+                {
+                    break;
                 }
             }
 
@@ -51,22 +50,41 @@ namespace SixLabors.Svg.Dom
                 family = fonts.Find(DefaultFont);
             }
 
-            var fontSize = element.PresentationStyleData.FontSize?.Value.Value ?? 12;
+            var fontSize = element.Style.FontSize.Value.Value;
             var origin = new PointF(element.X?.Value ?? 0, element.Y?.Value ?? 0);
             var font = family.CreateFont(fontSize);
-            var render = new RendererOptions(font, 72);
-            var text = element.Text;
 
+            var visitor = new SvgTextSpanTextVisitor();
+            element.Accept(visitor);
+            var text = visitor.Text;
 
-            var lineHeight = ((font.LineHeight * font.Size) / (font.EmSize * 72)) * 72;
+            // offset by the ascender to account for fonts render origin of top left
             var ascender = ((font.Ascender * font.Size) / (font.EmSize * 72)) * 72;
 
-            var glyphs = TextBuilder.GenerateGlyphs(text, new RendererOptions(font, 72, origin - new PointF(0, ascender)));
+            var render = new RendererOptions(font, 72, origin - new PointF(0, ascender))
+            {
+                HorizontalAlignment = element.Style.TextAnchor.Value.AsHorizontalAlignment()
+            };
+
+            var glyphs = TextBuilder.GenerateGlyphs(text, render);
             foreach (var p in glyphs)
             {
                 this.RenderShapeToCanvas(element, p);
             }
         }
 
+    }
+
+
+    internal class SvgTextSpanTextVisitor : SvgElementWalker
+    {
+        private StringBuilder sb = new StringBuilder();
+
+        public string Text => sb.ToString();
+
+        public override void VisitInlineTextSpanElement(SvgInlineTextSpanElement element)
+        {
+            sb.Append(element.Text);
+        }
     }
 }

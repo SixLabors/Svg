@@ -1,4 +1,5 @@
-﻿using SixLabors.ImageSharp.PixelFormats;
+﻿using SixLabors.Fonts;
+using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.Shapes;
 using SVGSharpie;
 using System.Numerics;
@@ -20,6 +21,20 @@ namespace SixLabors.Svg.Dom
             color.FromRgba32(colorRgb);
 
             return color;
+        }
+
+        public static HorizontalAlignment AsHorizontalAlignment(this CssTextAnchorType textalign)
+        {
+            switch (textalign)
+            {
+                case CssTextAnchorType.End: // shouldn't really be called should be transformed based on text direction???
+                    return HorizontalAlignment.Right;
+                case CssTextAnchorType.Middle:
+                    return HorizontalAlignment.Center;
+                case CssTextAnchorType.Start:
+                default:
+                    return HorizontalAlignment.Left;
+            }
         }
 
         public static JointStyle AsJointStyle(this StyleProperty<SvgStrokeLineJoin> join) => join.Value.AsJointStyle();

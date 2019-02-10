@@ -1,6 +1,12 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Svg;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Tests.TestUtilities.ImageComparison;
 using SixLabors.Svg.Dom;
 using Xunit;
 
@@ -8,39 +14,27 @@ namespace SixLabors.Svg.Tests
 {
     public class UnitTest1
     {
+        public static string rootFolder = Utils.GetPath("external", "svgwg");
+        public static string rootFolderOutput = Utils.GetPath("output", "svgwg");
+        public static TheoryData<string, string, string> CustomPaths => Utils.SampleImages(@"tests\SixLabors.Svg.Tests\Tests Cases\Simple Text");
 
-        [Fact]
-        public async Task Test1()
+        [Theory]
+        [MemberData(nameof(CustomPaths))]
+        public async Task Test1(string svgFileName, string pngFileName, string folder)
         {
-            var path = Utils.GetPath("TestCases", "styling-css-01-b", "source.svg");
-            var img = await SixLabors.Svg.SvgImage.LoadFromFileAsync(path);
-        }
+            var svgFullPath = Path.Combine(folder, svgFileName);
+            var pngFullPath = Path.Combine(folder, pngFileName);
+            using (var svgImg = SvgImageRenderer.LoadFromString<Rgba32>(File.ReadAllText(svgFullPath)))
+            using (var pngImg = SixLabors.ImageSharp.Image.Load(pngFullPath))
+            {
+                var outputPath = pngFullPath.Replace(rootFolder, rootFolderOutput);
+                var dir = Path.GetDirectoryName(outputPath);
+                var fn = Path.GetFileNameWithoutExtension(outputPath);
+                Directory.CreateDirectory(dir);
+                svgImg.Save(Path.Combine(dir, fn + ".gen.png"));
 
-        [Fact]
-        public async Task FromString()
-        {
-            var img = await SixLabors.Svg.SvgImage.LoadFromStringAsync(@"<svg></svg>");
-
-            Assert.NotNull(img.root);
-            Assert.Equal(0, img.root.Children.Count);
-        }
-
-        [Fact]
-        public async Task FromStringRect()
-        {
-            var img = await SixLabors.Svg.SvgImage.LoadFromStringAsync(@"<svg><rect x='1' y='2mm' width='3in' height='4%'/></svg>");
-
-            Assert.NotNull(img.root);
-            Assert.Equal(1, img.root.Children.Count);
-            var rect =Assert.IsType<SvgRect>(img.root.Children.First());
-            Assert.Equal(1, rect.X.Value);
-            Assert.Equal(SvgUnitValue.Units.undefined, rect.X.Unit);
-            Assert.Equal(2, rect.Y.Value);
-            Assert.Equal(SvgUnitValue.Units.mm, rect.Y.Unit);
-            Assert.Equal(3, rect.Width.Value);
-            Assert.Equal(SvgUnitValue.Units.inches, rect.Width.Unit);
-            Assert.Equal(4, rect.Height.Value);
-            Assert.Equal(SvgUnitValue.Units.percent, rect.Height.Unit);
+                ImageComparer.Tolerant(perPixelManhattanThreshold: 500).VerifySimilarity(svgImg, pngImg);
+            }
         }
     }
 }
